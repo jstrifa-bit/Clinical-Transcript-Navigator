@@ -15,7 +15,19 @@ export default async function handler(req, res) {
   }
   try {
     const body = req.body || {};
-    const result = await invokeGeminiEvaluation(body);
+    // Gemini's numeric output is entirely overridden by the deterministic
+    // scorers below, so a transient Gemini failure (503 overloaded, 429, etc.)
+    // must NOT fail the whole evaluation - that would show "Unavailable" pills
+    // for scores that don't even depend on Gemini. Fall through to
+    // deterministic-only on any Gemini error.
+    let result, geminiError = null;
+    try {
+      result = await invokeGeminiEvaluation(body);
+    } catch (gemErr) {
+      geminiError = gemErr.message;
+      console.warn("Gemini evaluation failed; using deterministic-only:", gemErr.message);
+      result = { evaluation: {}, model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" };
+    }
 
     // Override Gemini's sop_accuracy with a deterministic score computed from
     // the priority table + required_flags + extraction. Gemini repeatedly
@@ -95,9 +107,12 @@ export default async function handler(req, res) {
       }
     }
 
+    if (geminiError && evaluation.evaluator_notes == null) {
+      evaluation.evaluator_notes = "Gemini evaluator unavailable; all dimensions scored deterministically.";
+    }
     res.status(200).json({
       ok: true,
-      evaluator: "gemini+deterministic",
+      evaluator: geminiError ? "deterministic" : "gemini+deterministic",
       model: result.model,
       evaluation
     });
