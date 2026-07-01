@@ -7,6 +7,13 @@
       "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "server.ps1"],
       "port": 4321,
       "autoPort": true
+    },
+    {
+      "name": "premier-next",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 4321,
+      "autoPort": true
     }
   ]
 }
