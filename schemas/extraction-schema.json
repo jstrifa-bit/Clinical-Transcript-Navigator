@@ -1,0 +1,109 @@
+{
+  "version": "2.0",
+  "case_id": "string | null",
+  "patient": {
+    "name": "string | null",
+    "case_type": "joint | bariatric | null"
+  },
+  "clinical_flags": {
+    "general": {
+      "dental_visit_within_6_months": {
+        "value": "boolean | null",
+        "source_quote": "string | null",
+        "confidence": "high | medium | low | null"
+      },
+      "pending_dental_work": {
+        "value": "boolean | null",
+        "source_quote": "string | null",
+        "confidence": "high | medium | low | null"
+      }
+    },
+    "joint": {
+      "active_smoker": { "value": "boolean | null", "source_quote": "string | null", "confidence": "high | medium | low | null" },
+      "quit_smoking_within_3_months": { "value": "boolean | null", "source_quote": "string | null", "confidence": "high | medium | low | null" },
+      "attempted_pt": {
+        "value": "boolean | null",
+        "source_quote": "string | null",
+        "confidence": "high | medium | low | null",
+        "pt_details": {
+          "session_count": "integer | null",
+          "duration_weeks": "integer | null",
+          "provider_name": "string | null",
+          "was_formal": "boolean | null"
+        }
+      },
+      "hba1c_value": { "value": "float | null", "source_quote": "string | null", "confidence": "high | medium | low | null", "test_date": "string | null" },
+      "daily_opioid_use": { "value": "boolean | null", "source_quote": "string | null", "confidence": "high | medium | low | null" },
+      "opioid_duration_months": { "value": "integer | null", "source_quote": "string | null", "confidence": "high | medium | low | null", "medication_name": "string | null", "dosage": "string | null" }
+    },
+    "bariatric": {
+      "prior_weight_loss_surgery": {
+        "value": "boolean | null",
+        "source_quote": "string | null",
+        "confidence": "high | medium | low | null",
+        "surgery_type": "string | null",
+        "surgery_year": "integer | null",
+        "surgery_location": "string | null"
+      },
+      "endoscopy_within_3_months": { "value": "boolean | null", "source_quote": "string | null", "confidence": "high | medium | low | null" },
+      "has_registered_dietician": { "value": "boolean | null", "source_quote": "string | null", "confidence": "high | medium | low | null", "rd_details": "string | null" }
+    }
+  },
+  "sop_recommendations": [
+    {
+      "id": "string",
+      "category": "General | Joint | Bariatric",
+      "finding": "string",
+      "case_status": "string",
+      "action": "string",
+      "triggered_by_flags": ["string"],
+      "priority": "integer",
+      "confidence": "high | medium | low"
+    }
+  ],
+  "next_steps": [
+    {
+      "step_id": "string",
+      "description": "string",
+      "triggered_by_sop": "string",
+      "priority": "integer",
+      "status": "pending | in_progress | complete | escalated",
+      "confidence": "high | medium | low",
+      "assigned_to": "string | null",
+      "due_date": "string | null"
+    }
+  ],
+  "case_summary": "string | null",
+  "overall_case_status": "string | null",
+  "extraction_metadata": {
+    "extraction_confidence": "high | medium | low",
+    "requires_human_review": "boolean",
+    "review_reason": "string | null",
+    "missing_flags": ["string"],
+    "ambiguous_flags": ["string"],
+    "null_flag_count": "integer"
+  },
+  "evaluation": {
+    "sop_accuracy": {
+      "score": "float",
+      "reason": "string"
+    },
+    "extraction_completeness": {
+      "score": "float",
+      "reason": "string"
+    },
+    "next_step_actionability": {
+      "score": "float",
+      "reason": "string"
+    },
+    "human_review_appropriateness": {
+      "score": "float",
+      "reason": "string"
+    },
+    "overall_score": "float",
+    "score_label": "High | Medium | Low",
+    "needs_escalation": "boolean",
+    "escalation_reason": "string | null",
+    "evaluator_notes": "string | null"
+  }
+}
