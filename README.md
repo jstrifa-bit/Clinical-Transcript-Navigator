@@ -3,8 +3,8 @@
 AI-powered clinical transcript extraction and SOP routing 
 assistant for healthcare Care Teams.
 
-**Live demo:** https://premier-call-transcript.vercel.app
-**Built with:** Claude Opus · Google Gemini · Streamlit · Python
+**Live demo:** https://clinical-transcript-navigator.vercel.app/
+**Built with:** Claude Opus · Google Gemini · Python
 
 ## What It Does
 Extracts structured clinical facts from unstructured patient 
