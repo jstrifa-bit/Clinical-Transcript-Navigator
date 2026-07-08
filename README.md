@@ -7,7 +7,11 @@ assistant for healthcare Care Teams.
 **Built with:** Claude Opus · Google Gemini · Python
 
 ## What It Does
-After every patient call, a Healthcare Specialist extracts clinical facts from unstructured transcripts, cross-references them against SOPs, and routes the case to the right next step. As volume scales, that manual work creates two compounding problems: specialists lose confidence that no SOP flag was missed, and bottlenecks delay a patient's path to care. The Clinical Transcript Navigator automates the two highest-friction steps in that workflow, fact extraction and SOP-driven routing, returning a structured summary and prioritized next steps in under 30 seconds so the specialist can focus on judgment, not data entry. 
+After every patient call, a Healthcare Specialist extracts clinical facts from unstructured transcripts, cross-references them against SOPs, and routes the case to the right next step. As volume scales, that manual work creates two compounding problems: specialists lose confidence that no SOP flag was missed, and bottlenecks delay a patient's path to care. The Clinical Transcript Navigator automates the two highest-friction steps in that workflow, fact extraction and SOP-driven routing, returning a structured summary and prioritized next steps in under 30 seconds so the specialist can focus on judgment, not data entry.
+
+<img width="507" height="172" alt="image" src="https://github.com/user-attachments/assets/301359b7-7056-4aee-9c49-cb41be902bf2" />
+
+
 
 ## Architecture
 - **Stage 1:** Claude Opus extracts 13 clinical flags 
