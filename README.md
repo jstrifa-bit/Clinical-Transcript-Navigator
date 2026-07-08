@@ -11,6 +11,15 @@ After every patient call, a Healthcare Specialist extracts clinical facts from u
 
 <img width="507" height="172" alt="image" src="https://github.com/user-attachments/assets/301359b7-7056-4aee-9c49-cb41be902bf2" />
 
+↑ SSO login — one credential across all Healthcare systems, every action logged for HIPAA audit trail
+
+Patient calls generate unstructured call transcripts — raw conversational text requiring extraction before it can drive routing decisions. Specialists import transcripts from vector databases or paste directly. Vector databases are HIPAA compliant with signed BAA coverage. Claude Opus extracts clinical flags; Google Gemini independently evaluates recommendations and next steps. Specialists agree or disagree with each output — disagreements captured as free-form notes pushed to the EHR. All artifacts sync back to the patient's EHR profile on completion.
+
+<img width="489" height="267" alt="image" src="https://github.com/user-attachments/assets/9ac27912-2ffb-41a4-9d7a-17009ec80c40" />
+
+Every integration is governed by a signed HIPAA BAA. Transcript data is sourced exclusively from HIPAA-compliant systems with encrypted storage and BAA coverage — ensuring PHI is secured before it reaches the Care Navigator. The SSO audit log ties every read, write, and export event to a named user and timestamp — satisfying HIPAA's audit control requirements without custom logging infrastructure.
+
+
 
 
 ## Architecture
