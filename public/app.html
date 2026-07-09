@@ -383,6 +383,61 @@
   #resultsContainer > *:nth-child(4) { animation-delay: .12s; }
   #resultsContainer > *:nth-child(5) { animation-delay: .16s; }
 
+  /* ============================================================
+     REFRESH PASS — ambient background, primary-CTA prominence,
+     and the neural-network "Analyzing" processing stage.
+     ============================================================ */
+
+  /* soft ambient depth behind the app (fixed so it doesn't scroll-jitter) */
+  body {
+    background:
+      radial-gradient(1100px 560px at 88% -12%, #e6edfb 0%, rgba(230,237,251,0) 60%),
+      radial-gradient(900px 520px at -5% -6%, #e8f2fb 0%, rgba(232,242,251,0) 55%),
+      var(--bg);
+    background-attachment: fixed;
+  }
+
+  /* step badges pick up the brand gradient for a touch more life */
+  .card h2 .step-num { background: linear-gradient(135deg, var(--brand) 0%, var(--accent) 100%); box-shadow: 0 2px 6px rgba(29,78,216,.28); }
+
+  /* Analyze — promoted to the primary call-to-action */
+  #analyzeBtn {
+    background: linear-gradient(135deg, var(--brand) 0%, var(--accent) 100%);
+    box-shadow: 0 6px 16px rgba(29,78,216,.30);
+    padding: 9px 22px; font-size: 13px; letter-spacing: .01em;
+  }
+  #analyzeBtn:hover:not(:disabled) { background: linear-gradient(135deg, var(--brand-strong) 0%, var(--brand-2) 100%); box-shadow: 0 9px 24px rgba(29,78,216,.40); transform: translateY(-1px); }
+  #analyzeBtn:active:not(:disabled) { transform: translateY(0); }
+  #analyzeBtn:disabled { background: #aeb9c9; box-shadow: none; }
+
+  /* ---- Neural-network processing stage ---- */
+  .neural-card { padding: 0; border: 0; background: transparent; box-shadow: none; overflow: visible; }
+  .neural-stage {
+    position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px; padding: 48px 24px 42px; border-radius: var(--radius-lg);
+    background: radial-gradient(135% 130% at 50% -12%, #16407a 0%, #0c2249 44%, #081226 100%);
+    border: 1px solid #163a72;
+    box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,.06);
+    overflow: hidden;
+  }
+  .neural-stage::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(58% 46% at 50% 42%, rgba(56,130,246,.22), transparent 72%);
+  }
+  .nn-canvas { width: min(460px, 100%); height: 210px; position: relative; z-index: 1; display: block; }
+  .neural-label {
+    position: relative; z-index: 1; font-family: var(--font-ui); font-size: 23px; font-weight: 700; letter-spacing: .02em;
+    background: linear-gradient(90deg, #bcd8ff 0%, #7db8ff 50%, #bcd8ff 100%);
+    background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: nnShimmer 2.4s linear infinite;
+  }
+  @keyframes nnShimmer { to { background-position: 200% center; } }
+  .nn-dots span { animation: nnDot 1.4s infinite; }
+  .nn-dots span:nth-child(2) { animation-delay: .2s; }
+  .nn-dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes nnDot { 0%,60%,100% { opacity: .2; } 30% { opacity: 1; } }
+  .neural-sub { position: relative; z-index: 1; font-size: 13px; color: #9db8dd; text-align: center; max-width: 360px; line-height: 1.5; }
+
   /* respect reduced motion (a11y) */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
@@ -969,6 +1024,122 @@ function scrollToResults(){
   window.scrollTo({ top: y, behavior: reduce ? "auto" : "smooth" });
 }
 
+// Build the neural-network "Analyzing" processing stage. The network is drawn on
+// a canvas by startNeuralAnimation(): connecting points drift up/down and in
+// circular orbits, edges connect by proximity, and signal pulses hop between
+// nodes. Purely presentational; the canvas auto-stops when renderResults()
+// replaces #resultsContainer.
+function neuralAnalyzingHTML(){
+  return `
+    <div class="card neural-card" role="status" aria-live="polite" aria-label="Analyzing transcript">
+      <div class="neural-stage">
+        <canvas id="nnCanvas" class="nn-canvas" aria-hidden="true"></canvas>
+        <div class="neural-label">Analyzing<span class="nn-dots"><span>.</span><span>.</span><span>.</span></span></div>
+        <div class="neural-sub">Extracting clinical flags and routing against the SOP library</div>
+      </div>
+    </div>`;
+}
+
+let NEURAL_RAF = 0;
+// Animate the living network. Nodes move up/down (sine bob) or in circular
+// orbits; edges are drawn between any two nodes within range (brighter when
+// closer); glowing pulses travel between neighbouring nodes. The rAF loop stops
+// itself as soon as the canvas leaves the DOM, so no explicit teardown is needed.
+function startNeuralAnimation(){
+  const canvas = document.getElementById("nnCanvas");
+  if (!canvas) return;
+  if (NEURAL_RAF) { cancelAnimationFrame(NEURAL_RAF); NEURAL_RAF = 0; }
+  const ctx = canvas.getContext("2d");
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  let W = 0, H = 0, dpr = 1;
+  function resize(){
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = canvas.clientWidth || 460; H = canvas.clientHeight || 210;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resize();
+
+  // Lay nodes on a jittered grid so proximity edges read as a network.
+  const cols = 4, rows = 4, mx = 42, my = 32, nodes = [];
+  for (let r = 0; r < rows; r++){
+    for (let c = 0; c < cols; c++){
+      const bx = mx + (W - 2 * mx) * (cols > 1 ? c / (cols - 1) : .5) + (Math.random() * 2 - 1) * 18;
+      const by = my + (H - 2 * my) * (rows > 1 ? r / (rows - 1) : .5) + (Math.random() * 2 - 1) * 14;
+      const kind = (r * cols + c) % 3;                 // 0 bob down, 1 orbit, 2 bob up
+      nodes.push({ bx, by, x: bx, y: by,
+        amp: 8 + Math.random() * 12, rad: 7 + Math.random() * 10,
+        speed: 0.6 + Math.random() * 0.8, phase: Math.random() * Math.PI * 2,
+        pr: 2.6 + Math.random() * 1.6, kind });
+    }
+  }
+  const maxDist = Math.max(96, W * 0.28);
+  const nearIndex = i => {
+    const near = [];
+    for (let j = 0; j < nodes.length; j++){
+      if (j === i) continue;
+      if (Math.hypot(nodes[j].x - nodes[i].x, nodes[j].y - nodes[i].y) < maxDist) near.push(j);
+    }
+    return near.length ? near[(Math.random() * near.length) | 0] : (i + 1) % nodes.length;
+  };
+  const pulses = [];
+  for (let k = 0; k < 7; k++){
+    const a = (Math.random() * nodes.length) | 0;
+    pulses.push({ a, b: nearIndex(a), t: Math.random(), sp: 0.006 + Math.random() * 0.01 });
+  }
+
+  function positionNodes(t){
+    for (const n of nodes){
+      if (n.kind === 1){ n.x = n.bx + Math.cos(t * n.speed + n.phase) * n.rad; n.y = n.by + Math.sin(t * n.speed + n.phase) * n.rad; }
+      else { n.x = n.bx; n.y = n.by + Math.sin(t * n.speed + n.phase) * n.amp * (n.kind === 0 ? 1 : -1); }
+    }
+  }
+  function drawEdges(){
+    ctx.lineWidth = 1;
+    for (let i = 0; i < nodes.length; i++){
+      for (let j = i + 1; j < nodes.length; j++){
+        const d = Math.hypot(nodes[j].x - nodes[i].x, nodes[j].y - nodes[i].y);
+        if (d < maxDist){
+          ctx.strokeStyle = "rgba(125,211,252," + ((1 - d / maxDist) * 0.55).toFixed(3) + ")";
+          ctx.beginPath(); ctx.moveTo(nodes[i].x, nodes[i].y); ctx.lineTo(nodes[j].x, nodes[j].y); ctx.stroke();
+        }
+      }
+    }
+  }
+  function drawNodes(t){
+    ctx.save(); ctx.shadowColor = "rgba(96,165,250,.85)"; ctx.shadowBlur = 10; ctx.fillStyle = "#cfe6ff";
+    for (const n of nodes){
+      const p = 1 + (reduce ? 0 : Math.sin(t * 1.8 + n.phase) * 0.35);
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.pr * p + 1.2, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  const t0 = performance.now();
+  function frame(now){
+    if (!canvas.isConnected){ NEURAL_RAF = 0; return; }   // auto-stop when replaced
+    if (canvas.clientWidth !== W || canvas.clientHeight !== H) resize();
+    const t = (now - t0) / 1000;
+    positionNodes(t);
+    ctx.clearRect(0, 0, W, H);
+    drawEdges();
+    ctx.save(); ctx.shadowColor = "rgba(56,189,248,.9)"; ctx.shadowBlur = 8; ctx.fillStyle = "#e0f2ff";
+    for (const p of pulses){
+      p.t += p.sp;
+      if (p.t >= 1){ p.a = p.b; p.b = nearIndex(p.a); p.t = 0; }
+      const A = nodes[p.a], B = nodes[p.b];
+      ctx.beginPath(); ctx.arc(A.x + (B.x - A.x) * p.t, A.y + (B.y - A.y) * p.t, 2.2, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+    drawNodes(t);
+    NEURAL_RAF = requestAnimationFrame(frame);
+  }
+
+  if (reduce){ positionNodes(0); ctx.clearRect(0, 0, W, H); drawEdges(); drawNodes(0); return; }
+  NEURAL_RAF = requestAnimationFrame(frame);
+}
+
 async function onAnalyze(){
   const transcript = $("transcript").value.trim();
   if (!transcript) { toast("Paste or import a transcript first."); return; }
@@ -1039,7 +1210,8 @@ async function onAnalyze(){
   }
 
   $("analyzeBtn").textContent = "Analyzing...";
-  $("resultsContainer").innerHTML = `<div class="card"><div class="muted">Running analysis... <span class="spinner" style="display:inline-block; vertical-align:middle;"></span></div></div>`;
+  $("resultsContainer").innerHTML = neuralAnalyzingHTML();
+  startNeuralAnimation();
   scrollToResults();  // bring the running state + results into view, no manual scroll
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s safety net
